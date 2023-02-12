@@ -39,6 +39,21 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.test</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.parent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.test</groupId>
+                <artifactId>domain</artifactId>
+                <version>${project.parent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.test</groupId>
+                <artifactId>service</artifactId>
+                <version>${project.parent.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.vavr</groupId>
                 <artifactId>vavr</artifactId>
                 <version>${vavr.version}</version>
@@ -47,36 +62,26 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit-jupiter.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.test</groupId>
-                <artifactId>service</artifactId>
-                <version>${project.parent.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-jre8</artifactId>
                 <version>${wiremock.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp3.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${okhttp3.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -89,16 +94,6 @@
                 <artifactId>javafaker</artifactId>
                 <version>${javafaker.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.test</groupId>
-                <artifactId>common</artifactId>
-                <version>${project.parent.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.test</groupId>
-                <artifactId>domain</artifactId>
-                <version>${project.parent.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jsoup</groupId>
