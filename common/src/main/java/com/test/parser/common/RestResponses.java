@@ -2,18 +2,19 @@ package com.test.parser.common;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import reactor.core.publisher.Mono;
 
 public class RestResponses {
 
     public record ValidationError(String message) {
     }
 
-    public static ResponseEntity<ErrorRestResponse.BadRequestRestResponse> toInvalidParamsBadRequest(ValidationError error) {
+    public static Mono<ResponseEntity<ErrorRestResponse.BadRequestRestResponse>> toInvalidParamsBadRequest(ValidationError error) {
 
-        return ResponseEntity
+        return Mono.just(ResponseEntity
                 .badRequest()
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
-                .body(new ErrorRestResponse.BadRequestRestResponse(error.message));
+                .body(new ErrorRestResponse.BadRequestRestResponse(error.message)));
     }
 
     public static <T> ResponseEntity<T> get(T body) {
