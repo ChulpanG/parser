@@ -1,7 +1,6 @@
 package com.test.parser.domain.types;
 
-import com.test.parser.domain.error.CreateUrlError;
-import io.vavr.control.Either;
+import com.test.parser.domain.exception.InvalidUrlException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,11 +18,11 @@ public class Url {
         return value;
     }
 
-    public static Either<CreateUrlError, Url> from(String url) {
+    public static Url from(String url) {
         if (!url.isBlank() && isMatch(url)) {
-            return Either.right(new Url(url));
+            return new Url(url);
         } else {
-            return Either.left(new CreateUrlError.EmptyUrlError());
+            throw new InvalidUrlException("Invalid url");
         }
     }
 

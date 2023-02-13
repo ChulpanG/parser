@@ -10,7 +10,6 @@ curl --location --request GET 'http://localhost:8080/html?url=https://www.siteja
 
 ### Technologies
 
-* [Vavr.io](https://docs.vavr.io/)
 * Spring WebFlux
 * [Jsoup](https://jsoup.org/)
 * Jacoco Test Report

@@ -19,10 +19,6 @@
         </dependency>
         <dependency>
             <groupId>com.test</groupId>
-            <artifactId>common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.test</groupId>
             <artifactId>service</artifactId>
         </dependency>
         <dependency>
