@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class Url {
 
-    private String value;
+    private final String value;
     private static final String REGEX = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
     public Url(String value) {

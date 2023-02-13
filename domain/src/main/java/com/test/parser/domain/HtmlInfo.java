@@ -7,6 +7,7 @@ import lombok.NonNull;
 @Data
 @Builder
 public class HtmlInfo {
+
     @NonNull
     private Integer reviewsCount;
     @NonNull
