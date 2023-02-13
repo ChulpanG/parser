@@ -1,13 +1,17 @@
 package com.test.parser;
 
 import com.test.parser.domain.HtmlInfo;
-import com.test.parser.rest.ParseHtmlByUrlEndpoint;
+import com.test.parser.rest.PageParseController;
+import lombok.SneakyThrows;
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,23 +35,37 @@ class ParserApplicationTests {
     private WebTestClient webTestClient;
     public static MockWebServer mockServer;
 
-    @BeforeEach
-    public void setUp() throws IOException {
+    @BeforeAll
+    static void setUp() throws IOException {
+        final Dispatcher dispatcher = new Dispatcher() {
+            @NotNull
+            @SneakyThrows
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+
+                return switch (request.getPath()) {
+                    case "/correct" -> prepareMockByFile("correctResponse.html");
+                    case "/requiredFieldsMissing" -> prepareMockByFile("responseWithoutNameField.html");
+                    case "/incorrectStructure" -> new MockResponse().setBody("<html</html>");
+                    case "/internalServerError" -> new MockResponse().setResponseCode(500);
+                    default -> new MockResponse().setResponseCode(404);
+                };
+            }
+        };
         mockServer = new MockWebServer();
+        mockServer.setDispatcher(dispatcher);
         mockServer.start();
     }
 
-    @AfterEach
-    public void tearDown() throws IOException {
+    @AfterAll
+    static void tearDown() throws IOException {
         mockServer.shutdown();
     }
 
     @Test
-    void successParseHtml() throws Exception {
-        prepareMock("correctResponse.html");
-
-        HtmlInfo response = webTestClient.get()
-                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort())
+    void successParseHtml() {
+        var response = webTestClient.get()
+                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort() + "/correct")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(APPLICATION_JSON)
@@ -55,7 +73,6 @@ class ParserApplicationTests {
                 .getResponseBody()
                 .blockFirst();
 
-        Assertions.assertEquals(1, mockServer.getRequestCount());
         Assertions.assertNotNull(response);
         Assertions.assertEquals("KEH", response.getName());
         Assertions.assertEquals(70104, response.getReviewsCount());
@@ -64,81 +81,72 @@ class ParserApplicationTests {
     }
 
     @Test
-    void parseHtmlException() throws Exception {
-        prepareMock("invalidResponse.html");
-
-        ParseHtmlByUrlEndpoint.ParsingRestError response = webTestClient.get()
-                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort())
+    void parseHtmlException() {
+        var response = webTestClient.get()
+                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort() + "/incorrectStructure")
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectHeader().contentType(APPLICATION_JSON)
-                .returnResult(ParseHtmlByUrlEndpoint.ParsingRestError.class)
+                .returnResult(PageParseController.ParsingRestError.class)
                 .getResponseBody()
                 .blockFirst();
 
-        Assertions.assertEquals(1, mockServer.getRequestCount());
         Assertions.assertNotNull(response);
-        Assertions.assertEquals("java.lang.NullPointerException", response.message());
+        Assertions.assertEquals("java.lang.NullPointerException", response.systemMessage());
         Assertions.assertEquals("page_parsing", response.type());
     }
 
     @Test
-    void responseWithoutField() throws Exception {
-        prepareMock("responseWithoutNameField.html");
-
-        ParseHtmlByUrlEndpoint.ParsingRestError response = webTestClient.get()
-                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort())
+    void responseWithoutField() {
+        var response = webTestClient.get()
+                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort() + "/requiredFieldsMissing")
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectHeader().contentType(APPLICATION_JSON)
-                .returnResult(ParseHtmlByUrlEndpoint.ParsingRestError.class)
+                .returnResult(PageParseController.ParsingRestError.class)
                 .getResponseBody()
                 .blockFirst();
 
-        Assertions.assertEquals(1, mockServer.getRequestCount());
         Assertions.assertNotNull(response);
-        Assertions.assertEquals("java.lang.NullPointerException: name is marked non-null but is null", response.message());
+        Assertions.assertEquals("java.lang.NullPointerException: name is marked non-null but is null", response.systemMessage());
         Assertions.assertEquals("page_parsing", response.type());
     }
 
     @Test
     void badRequest() {
-        ParseHtmlByUrlEndpoint.ParsingRestError response = webTestClient.get()
+        var response = webTestClient.get()
                 .uri("/html?url=badUrl")
                 .exchange()
                 .expectStatus().is4xxClientError()
                 .expectHeader().contentType(APPLICATION_JSON)
-                .returnResult(ParseHtmlByUrlEndpoint.ParsingRestError.class)
+                .returnResult(PageParseController.ParsingRestError.class)
                 .getResponseBody()
                 .blockFirst();
         Assertions.assertNotNull(response);
-        Assertions.assertEquals(0, mockServer.getRequestCount());
         Assertions.assertEquals(response.type(), "invalid_url");
-        Assertions.assertEquals(response.message(), "Invalid url");
+        Assertions.assertEquals(response.systemMessage(), "Invalid url");
     }
 
     @Test
-    void connectError() {
-        mockServer.enqueue(new MockResponse().setResponseCode(503));
-        ParseHtmlByUrlEndpoint.ParsingRestError response = webTestClient.get()
-                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort())
+    void code500FromWebPage() {
+        var response = webTestClient.get()
+                .uri("/html?url=http://" + mockServer.getHostName() + ":" + mockServer.getPort() + "/internalServerError")
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectHeader().contentType(APPLICATION_JSON)
-                .returnResult(ParseHtmlByUrlEndpoint.ParsingRestError.class)
+                .returnResult(PageParseController.ParsingRestError.class)
                 .getResponseBody()
                 .blockFirst();
         Assertions.assertNotNull(response);
-        Assertions.assertEquals(0, mockServer.getRequestCount());
-        Assertions.assertEquals(response.type(), "page_connect");
-        Assertions.assertEquals(response.message(), "Invalid url");
+        Assertions.assertEquals(response.type(), "page_loading");
+        Assertions.assertEquals(response.systemMessage(), "Error while request site");
     }
 
-    private void prepareMock(String responseFileName) throws IOException {
+    private static MockResponse prepareMockByFile(String responseFileName) throws IOException {
         URL resource = ParserApplicationTests.class.getClassLoader().getResource(responseFileName);
         String htmlPage = FileUtils.readFileToString(new File(resource.getFile()), StandardCharsets.UTF_8);
-        mockServer.enqueue(new MockResponse()
+        return new MockResponse()
                 .setBody(htmlPage)
-                .addHeader("Content-Type", MediaType.TEXT_HTML_VALUE));
+                .addHeader("Content-Type", MediaType.TEXT_HTML_VALUE);
     }
 }
